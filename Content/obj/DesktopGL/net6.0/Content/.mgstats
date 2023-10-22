@@ -1,0 +1,4 @@
+Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
+"C:/Users/user/Desktop/Code/C#/Scissors-Paper-Stone-Simulation/Content/paper.png","C:/Users/user/Desktop/Code/C#/Scissors-Paper-Stone-Simulation/Content/bin/DesktopGL/Content/paper.xnb","TextureProcessor","Texture2DContent",1266,230485,0.2172038
+"C:/Users/user/Desktop/Code/C#/Scissors-Paper-Stone-Simulation/Content/scissors.png","C:/Users/user/Desktop/Code/C#/Scissors-Paper-Stone-Simulation/Content/bin/DesktopGL/Content/scissors.xnb","TextureProcessor","Texture2DContent",124550,14794837,0.3652016
+"C:/Users/user/Desktop/Code/C#/Scissors-Paper-Stone-Simulation/Content/stone.png","C:/Users/user/Desktop/Code/C#/Scissors-Paper-Stone-Simulation/Content/bin/DesktopGL/Content/stone.xnb","TextureProcessor","Texture2DContent",72982,1048661,0.0544458
