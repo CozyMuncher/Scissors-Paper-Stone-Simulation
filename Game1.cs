@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Runtime.Serialization;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -8,7 +10,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Scissors_Paper_Stone_Simulation;
 
-public class Game1 : Game
+public class ScissorsPaperStone : Game
 {
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
@@ -16,16 +18,25 @@ public class Game1 : Game
     float ScissorsScale = 0.035f;
     float PaperScale = 0.3f;
     float StoneScale = 0.15f;
+    float speed = 300f;
+    string ScissorsTexture = "Scissors";
+    string PaperTexture = "Paper";
+    string StoneTexture = "Stone";
 
     public class Item
     {
-        public Texture2D objectTexture;
-        public Vector2 objectPosition;
-        public float objectSpeed;
-        public string objectType;
+        public Texture2D Texture;
+        public Vector2 Position;
+        public string Type;
+        public Vector2 Direction = new Vector2(
+            new Random().Next(-10000, 10000) / 10000f,
+            new Random().Next(-10000, 10000) / 10000f
+            );
+        public float Scale;
+        public string TextureName;
     }
 
-    public Game1()
+    public ScissorsPaperStone()
     {
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
@@ -35,13 +46,13 @@ public class Game1 : Game
         for (int i = 0; i < 20; i++)
         {
             Items.Add(new Item());
-            Items[0 + 3*i].objectType = "Scissors";
+            Items[0 + 3*i].Type = "Scissors";
 
             Items.Add(new Item());
-            Items[1 + 3*i].objectType = "Paper";
+            Items[1 + 3*i].Type = "Paper";
 
             Items.Add(new Item());
-            Items[2 + 3*i].objectType = "Stone";
+            Items[2 + 3*i].Type = "Stone";
         }
     }
 
@@ -60,63 +71,135 @@ public class Game1 : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        // TODO: use this.Content to load your game content here
         for (int i = 0; i < Items.Count; i++)
         {
-            if (Items[i].objectType == "Scissors")
+            if (Items[i].Type == "Scissors")
             {
-                Items[i].objectTexture = Content.Load<Texture2D>("Scissors");
-                
-                Items[i].objectPosition = new Vector2 (
+                Items[i].Texture = Content.Load<Texture2D>("Scissors");
+                Items[i].Scale = ScissorsScale;
+                Items[i].Position = new Vector2 (
                     new Random().Next(
-                        (int)(Items[i].objectTexture.Width * ScissorsScale / 2),
-                        (int)(_graphics.PreferredBackBufferWidth - (Items[i].objectTexture.Width * ScissorsScale / 2))
+                        (int)(Items[i].Texture.Width * ScissorsScale / 2),
+                        (int)(_graphics.PreferredBackBufferWidth - (Items[i].Texture.Width * ScissorsScale / 2))
                     ),
                     new Random().Next(
-                        (int)(Items[i].objectTexture.Height * ScissorsScale / 2),
-                        (int)(_graphics.PreferredBackBufferHeight - (Items[i].objectTexture.Height * ScissorsScale / 2))
+                        (int)(Items[i].Texture.Height * ScissorsScale / 2),
+                        (int)(_graphics.PreferredBackBufferHeight - (Items[i].Texture.Height * ScissorsScale / 2))
                     )
                 );
+                Items[i].TextureName = ScissorsTexture;
             }
-            else if (Items[i].objectType == "Paper")
+            else if (Items[i].Type == "Paper")
             {
-                Items[i].objectTexture = Content.Load<Texture2D>("Paper");
-
-                Items[i].objectPosition = new Vector2 (
+                Items[i].Texture = Content.Load<Texture2D>("Paper");
+                Items[i].Scale = PaperScale;
+                Items[i].Position = new Vector2 (
                     new Random().Next(
-                        (int)(Items[i].objectTexture.Width * PaperScale / 2),
-                        (int)(_graphics.PreferredBackBufferWidth - (Items[i].objectTexture.Width * PaperScale / 2))
+                        (int)(Items[i].Texture.Width * PaperScale / 2),
+                        (int)(_graphics.PreferredBackBufferWidth - (Items[i].Texture.Width * PaperScale / 2))
                     ),
                     new Random().Next(
-                        (int)(Items[i].objectTexture.Height * PaperScale / 2),
-                        (int)(_graphics.PreferredBackBufferHeight - (Items[i].objectTexture.Height * PaperScale / 2))
+                        (int)(Items[i].Texture.Height * PaperScale / 2),
+                        (int)(_graphics.PreferredBackBufferHeight - (Items[i].Texture.Height * PaperScale / 2))
                     )
                 );
+                Items[i].TextureName = PaperTexture;
             }
-            else if (Items[i].objectType == "Stone")
+            else if (Items[i].Type == "Stone")
             {
-                Items[i].objectTexture = Content.Load<Texture2D>("Stone");
-
-                Items[i].objectPosition = new Vector2 (
+                Items[i].Texture = Content.Load<Texture2D>("Stone");
+                Items[i].Scale = StoneScale;
+                Items[i].Position = new Vector2 (
                     new Random().Next(
-                        (int)(Items[i].objectTexture.Width * StoneScale / 2),
-                        (int)(_graphics.PreferredBackBufferWidth - (Items[i].objectTexture.Width * StoneScale / 2))
+                        (int)(Items[i].Texture.Width * StoneScale / 2),
+                        (int)(_graphics.PreferredBackBufferWidth - (Items[i].Texture.Width * StoneScale / 2))
                     ),
                     new Random().Next(
-                        (int)(Items[i].objectTexture.Height * StoneScale / 2),
-                        (int)(_graphics.PreferredBackBufferHeight - (Items[i].objectTexture.Height * StoneScale / 2))
+                        (int)(Items[i].Texture.Height * StoneScale / 2),
+                        (int)(_graphics.PreferredBackBufferHeight - (Items[i].Texture.Height * StoneScale / 2))
                     )
                 );
+                Items[i].TextureName = StoneTexture;
             }
         }
     }   
 
     protected override void Update(GameTime gameTime)
     {
+        _spriteBatch = new SpriteBatch(GraphicsDevice);
+
         if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
-        // TODO: Add your update logic here
+        for (int i = 0; i < Items.Count; i++)
+        {
+            // Movement and Collision with wall checks
+            if (Items[i].Position.X + speed * (float)gameTime.ElapsedGameTime.TotalSeconds * Items[i].Direction.X >
+                _graphics.PreferredBackBufferWidth - (Items[i].Texture.Width * Items[i].Scale / 2) ||
+                Items[i].Position.X + speed * (float)gameTime.ElapsedGameTime.TotalSeconds * Items[i].Direction.X <
+                Items[i].Texture.Width * Items[i].Scale / 2)
+                {
+                    Items[i].Direction.X = -Items[i].Direction.X;
+                }
+            Items[i].Position.X = Items[i].Position.X + speed * (float)gameTime.ElapsedGameTime.TotalSeconds * Items[i].Direction.X;
+
+            if (Items[i].Position.Y + speed * (float)gameTime.ElapsedGameTime.TotalSeconds * Items[i].Direction.Y >
+                _graphics.PreferredBackBufferHeight - (Items[i].Texture.Height * Items[i].Scale / 2) ||
+                Items[i].Position.Y + speed * (float)gameTime.ElapsedGameTime.TotalSeconds * Items[i].Direction.Y <
+                Items[i].Texture.Height * Items[i].Scale / 2)
+                {
+                    Items[i].Direction.Y = -Items[i].Direction.Y;
+                }
+            Items[i].Position.Y = Items[i].Position.Y + speed * (float)gameTime.ElapsedGameTime.TotalSeconds * Items[i].Direction.Y;
+
+            // Collision Checks
+            for (int x = i + 1; x < Items.Count; x++)
+            {
+                if (Items[i].Position.X < Items[x].Position.X &&
+                    Items[i].Position.X + Items[i].Texture.Width * Items[i].Scale > Items[x].Position.X &&
+                    Items[i].Position.Y < Items[x].Position.Y &&
+                    Items[i].Position.Y + Items[i].Texture.Height * Items[i].Scale > Items[x].Position.Y ||
+
+                    Items[i].Position.X < Items[x].Position.X + Items[x].Texture.Width * Items[x].Scale &&
+                    Items[i].Position.X + Items[i].Texture.Width * Items[i].Scale > Items[x].Position.X + Items[x].Texture.Width * Items[x].Scale &&
+                    Items[i].Position.Y < Items[x].Position.Y &&
+                    Items[i].Position.Y + Items[i].Texture.Height * Items[i].Scale > Items[x].Position.Y ||
+
+                    Items[i].Position.X < Items[x].Position.X &&
+                    Items[i].Position.X + Items[i].Texture.Width * Items[i].Scale > Items[x].Position.X &&
+                    Items[i].Position.Y < Items[x].Position.Y + Items[x].Texture.Height * Items[x].Scale &&
+                    Items[i].Position.Y + Items[i].Texture.Height * Items[i].Scale > Items[x].Position.Y + Items[x].Texture.Height * Items[x].Scale ||
+
+                    Items[i].Position.X < Items[x].Position.X + Items[x].Texture.Width * Items[x].Scale &&
+                    Items[i].Position.X + Items[i].Texture.Width * Items[i].Scale > Items[x].Position.X + Items[x].Texture.Width * Items[x].Scale &&
+                    Items[i].Position.Y < Items[x].Position.Y + Items[x].Texture.Height * Items[x].Scale &&
+                    Items[i].Position.Y + Items[i].Texture.Height * Items[i].Scale > Items[x].Position.Y + Items[x].Texture.Height * Items[x].Scale
+                    )
+                    {
+                        // Condition 1: Items[i] wins
+                        if (Items[i].Type == "Scissors" && Items[x].Type == "Paper" ||
+                            Items[i].Type == "Paper" && Items[x].Type == "Stone" ||
+                            Items[i].Type == "Stone" && Items[x].Type == "Scissors")
+                        {
+                            Items[x].Type = Items[i].Type;
+                            Items[x].Texture = Content.Load<Texture2D>(Items[i].TextureName);
+                            Items[x].Scale = Items[i].Scale;
+                            Items[x].TextureName = Items[i].TextureName;
+                        }
+                        // Condition 2: Items[i] Loses
+                        else if (Items[x].Type == "Scissors" && Items[i].Type == "Paper" ||
+                                 Items[x].Type == "Paper" && Items[i].Type == "Stone" ||
+                                 Items[x].Type == "Stone" && Items[i].Type == "Scissors")
+                        {
+                            Items[i].Type = Items[x].Type;
+                            Items[i].Texture = Content.Load<Texture2D>(Items[x].TextureName);
+                            Items[i].Scale = Items[x].Scale;
+                            Items[i].TextureName = Items[x].TextureName;
+                        }
+                        // Condition 3: Draw - Do nothing
+                    }
+            }
+        }
 
         base.Update(gameTime);
     }
@@ -129,25 +212,25 @@ public class Game1 : Game
 
         for (int i = 0; i < Items.Count; i++)
         {
-            if (Items[i].objectType == "Scissors")
+            if (Items[i].Type == "Scissors")
             {
-                _spriteBatch.Draw(Items[i].objectTexture, Items[i].objectPosition, null, Color.White,
+                _spriteBatch.Draw(Items[i].Texture, Items[i].Position, null, Color.White,
                                   0, new Vector2 (0, 0), new Vector2 (ScissorsScale, ScissorsScale), SpriteEffects.None, 1);
             }
-            else if (Items[i].objectType == "Paper")
+            else if (Items[i].Type == "Paper")
             {
-                _spriteBatch.Draw(Items[i].objectTexture, Items[i].objectPosition, null, Color.White,
+                _spriteBatch.Draw(Items[i].Texture, Items[i].Position, null, Color.White,
                                   0, new Vector2 (0, 0), new Vector2 (PaperScale, PaperScale), SpriteEffects.None, 0);
             }
-            else if (Items[i].objectType == "Stone")
+            else if (Items[i].Type == "Stone")
             {
-                _spriteBatch.Draw(Items[i].objectTexture, Items[i].objectPosition, null, Color.White,
+                _spriteBatch.Draw(Items[i].Texture, Items[i].Position, null, Color.White,
                                   0, new Vector2 (0, 0), new Vector2 (StoneScale, StoneScale), SpriteEffects.None, 0);
             }
         }
 
-        base.Draw(gameTime);
-
         _spriteBatch.End();
+
+        base.Draw(gameTime);
     }
 }
